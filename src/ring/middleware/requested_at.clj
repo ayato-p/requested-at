@@ -25,7 +25,10 @@
 (defn- normarize-requested-at-header [req]
   (update req :headers
           (fn [headers]
-            (reduce #(update %1 %2 (fnil str/lower-case ""))
+            (reduce #(cond-> %1
+                       (get %1 %2)
+                       (-> (dissoc %2)
+                           (assoc "x-requested-at" (get %1 %2))))
                     headers
                     requested-at-header-patterns))))
 

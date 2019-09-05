@@ -19,4 +19,20 @@
                   (assoc-in [:headers "x-requested-at"] "2019-01-01T00:00:00Z"))
           now (OffsetDateTime/now)]
       (t/is (.equals (OffsetDateTime/parse "2019-01-01T00:00:00Z")
-                     (get (handler req) ::sut/requested-at))))))
+                     (get (handler req) ::sut/requested-at))))
+
+    (let [handler (sut/wrap-requested-at identity {:dev true})
+          req (-> (mock/request :get "/ping")
+                  (assoc-in [:headers "X-Requested-At"] "2019-01-01T00:00:00Z"))
+          now (OffsetDateTime/now)]
+      (t/is (.equals (OffsetDateTime/parse "2019-01-01T00:00:00Z")
+                     (get (handler req) ::sut/requested-at))))
+
+    (let [handler (sut/wrap-requested-at identity {:dev true})
+          req (-> (mock/request :get "/ping")
+                  (assoc-in [:headers "X-requested-at"] "2019-01-01T00:00:00Z"))
+          now (OffsetDateTime/now)]
+      (t/is (.equals (OffsetDateTime/parse "2019-01-01T00:00:00Z")
+                     (get (handler req) ::sut/requested-at)))))
+
+  )
