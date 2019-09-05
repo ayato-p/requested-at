@@ -5,4 +5,7 @@
             :url "https://choosealicense.com/licenses/mit"}
   :dependencies []
   :profiles
-  {:provided {:dependencies [[org.clojure/clojure "1.10.1"]]}})
+  {:provided
+   {:dependencies [[org.clojure/clojure "1.10.1"]]}
+   :dev
+   {:dependencies [[ring/ring-mock "0.4.0"]]}})

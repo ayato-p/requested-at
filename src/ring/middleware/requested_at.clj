@@ -1,35 +1,49 @@
 (ns ring.middleware.requested-at
-  (:import java.time.LocalDateTime
-           java.time.format.DateTimeFormatter
-           java.util.Locale)
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str])
+  (:import java.time.format.DateTimeFormatter
+           java.time.OffsetDateTime
+           java.util.Locale))
 
 (defn- now []
-  (LocalDateTime/now))
+  (OffsetDateTime/now))
 
 (defn- new-formatter
   ([^String pattern]
-   (formatter pattern (Locale/getDefault))))
+   (DateTimeFormatter/ofPattern pattern (Locale/getDefault))))
 
 (defn- parse-datetime-string
   [s pattern]
   (if-let [formatter (when (string? pattern) (new-formatter pattern))]
-    (LocalDateTime/parse s formatter)
-    (LocalDateTime/parse s)))
+    (OffsetDateTime/parse s formatter)
+    (OffsetDateTime/parse s)))
+
+(def ^:private requested-at-header-patterns
+  ["x-requested-at"
+   "X-requested-at"
+   "X-Requested-At"])
+
+(defn- normarize-requested-at-header [req]
+  (update req :headers
+          (fn [headers]
+            (reduce #(update %1 %2 (fnil str/lower-case ""))
+                    headers
+                    requested-at-header-patterns))))
 
 (defn- parse-header [req]
   (get-in req [:headers "x-requested-at"]))
 
-(defn- assoc-requested-at [req {:keys [pattern]}]
+(defn- assoc-requested-at [req {:keys [pattern dev]}]
   (assoc req ::requested-at
-         (or (some-> (parse-header req)
-                     (parse-datetime-string pattern))
+         (or (when dev
+               (some-> (normarize-requested-at-header req)
+                       parse-header
+                       (parse-datetime-string pattern)))
              (now))))
 
 (defn wrap-requested-at
   ([handler]
-   (wrap-requested-at handler {}))
+   (wrap-requested-at handler {:dev false}))
 
-  ([handler {:keys [pattern] :as options}]
+  ([handler {:keys [pattern dev] :as options}]
    (fn wrap-requested-at* [req]
      (handler (assoc-requested-at req options)))))
